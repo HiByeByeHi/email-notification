@@ -8,11 +8,18 @@ import html
 
 api_service_name = 'youtube'
 api_version = 'v3'
-youtube = googleapiclient.discovery.build(api_service_name, api_version,
-    developerKey = os.environ.get('YOUTUBE_API_KEY'))
+youtube = googleapiclient.discovery.build(
+    api_service_name,
+    api_version,
+    developerKey = os.environ.get('YOUTUBE_API_KEY')
+)
 
-connection = psycopg2.connect(database="youtube", user='postgres',
-                              password=os.environ.get('POSTGRES_PASSWORD'), host="localhost", port=5432)
+connection = psycopg2.connect(
+    database="youtube",
+    user='postgres',
+    password=os.environ.get('POSTGRES_PASSWORD'),
+    host="localhost", port=5432
+)
 connection.autocommit = True
 cursor = connection.cursor()
 
@@ -27,22 +34,33 @@ def get_channel_id(handle):
 
 
 def get_videos(channel_id, start_date):
-    request = youtube.search().list(part='snippet', channelId=channel_id, type='video', order='date',
-                                    publishedAfter=start_date)
+    request = youtube.search().list(
+        part='snippet',
+        channelId=channel_id,
+        type='video',
+        order='date',
+        publishedAfter=start_date
+    )
     response = request.execute()
     res = []
     while response:
         print(response)
         for i in range(int(response['pageInfo']['resultsPerPage'])):
-            res.append(({'channel': response['items'][i]['snippet']['channelTitle'],
-                         'publication_date': response['items'][i]['snippet']['publishedAt'],
-                         'title': html.unescape(response['items'][i]['snippet']['title']),
-                         'video_id': response['items'][i]['id']['videoId'],
-                         'thumbnail': response['items'][i]['snippet']['thumbnails']['default']['url']}))
+            res.append(({
+                'channel': response['items'][i]['snippet']['channelTitle'],
+                'publication_date': response['items'][i]['snippet']['publishedAt'],
+                'title': html.unescape(response['items'][i]['snippet']['title']),
+                'video_id': response['items'][i]['id']['videoId'],
+                'thumbnail': response['items'][i]['snippet']['thumbnails']['default']['url']
+            }))
         if 'nextPageToken' in response:
-            request = youtube.search().list(part='snippet', channelId=channel_id, type='video',
-                                            order='date', publishedAfter=start_date,
-                                            pageToken=response['nextPageToken'])
+            request = youtube.search().list(
+                part='snippet',
+                channelId=channel_id,
+                type='video',
+                order='date', publishedAfter=start_date,
+                pageToken=response['nextPageToken']
+            )
             response = request.execute()
         else:
             response = None
@@ -51,13 +69,9 @@ def get_videos(channel_id, start_date):
 
 
 def retrieve_last_pulls(user_id):
-    sql_context = 'SELECT channel, last_pull FROM last_pull WHERE user_id=%s'
-
-    cursor.execute(sql_context, (user_id,))
-
-    # Fetch all rows from database
+    query = 'SELECT channel, last_pull FROM last_pull WHERE user_id=%s'
+    cursor.execute(query, (user_id,))
     record = cursor.fetchall()
-
     print("Data from Database:- ", record)
     return record
 
