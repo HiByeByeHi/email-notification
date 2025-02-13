@@ -6,14 +6,6 @@ from datetime import datetime, timedelta
 import html
 
 
-class Video:
-    def __init__(self, channel_name, publication_date, title, thumbnail):
-        self.channel_name = channel_name
-        self.publication_date = publication_date
-        self.title = title
-        self.thumbnail = thumbnail
-
-
 api_service_name = 'youtube'
 api_version = 'v3'
 youtube = googleapiclient.discovery.build(api_service_name, api_version,
@@ -26,6 +18,8 @@ cursor = connection.cursor()
 
 app = fastapi.FastAPI()
 
+
+@app.get('/channel/{handle}')
 def get_channel_id(handle):
     request = youtube.channels().list(part='snippet', forHandle=handle)
     response = request.execute()
@@ -55,6 +49,7 @@ def get_videos(channel_id, start_date):
     print(res)
     return res
 
+
 def retrieve_last_pulls(user_id):
     sql_context = 'SELECT channel, last_pull FROM last_pull WHERE user_id=%s'
 
@@ -66,7 +61,8 @@ def retrieve_last_pulls(user_id):
     print("Data from Database:- ", record)
     return record
 
-@app.get('/{user_id}')
+
+@app.get('/videos/{user_id}')
 def process_job(user_id):
     channels = retrieve_last_pulls(user_id)
     res = []
